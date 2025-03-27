@@ -7,5 +7,8 @@
   },
   "scripts": {
     "server": "node server.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.14"
   }
 }

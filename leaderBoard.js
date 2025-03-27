@@ -1,18 +1,15 @@
 const { MongoClient } = require('mongodb');
 require('dotenv').config({ path: './config.env' });
 
-class Users {
+class LeaderBoard {
+
   constructor() {
     this.Db = process.env.ATLAS_URI;
-    if (!this.Db) {
-      throw new Error("ATLAS_URI is not defined in the environment variables.");
-    }
+    if (!this.Db) { throw new Error("ATLAS_URI is not defined in the environment variables."); }
     this.client = new MongoClient(this.Db, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
     });
-    this.databaseName = "tcrypto";
-    this.collectionName = "users";
+    this.databaseName = "tcryptoproject";
+    this.collectionName = "leaderboard";
   }
 
   async connect() {
@@ -57,13 +54,4 @@ class Users {
   }
 }
 
-module.exports = Users; // Export the Users class
-
-// Example usage
-(async () => {
-  const users = new Users();
-  await users.connect();
-  await users.addUser("Alice", 100); // Add a user
-  await users.listUsers(); // List all users
-  await users.close();
-})();
+module.exports = LeaderBoard; // Export the Users class
