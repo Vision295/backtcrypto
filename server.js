@@ -9,6 +9,7 @@ const port = 5000;
 const ipAddress = 'localhost'; // Revert to localhost
 
 app.use(cors()); // Enable CORS
+app.use(express.json()); // Middleware pour parser le JSON
 
 let cachedUsers = [];
 let cachedCurrencies = [];
@@ -47,7 +48,6 @@ async function fetchCurrenciesPeriodically() {
 setInterval(fetchUsersPeriodically, 500);
 setInterval(fetchCurrenciesPeriodically, 300);
 
-
 // Initial fetch to populate caches
 fetchUsersPeriodically();
 fetchCurrenciesPeriodically();
@@ -60,6 +60,36 @@ app.get('/api/users', (req, res) => {
 app.get('/api/currencies', (req, res) => {
   console.log("Sending cached currencies:", cachedCurrencies); // Debugging log
   res.json(cachedCurrencies);
+});
+
+app.post('/api/users', async (req, res) => {
+  const { name, score } = req.body;
+  if (!name || typeof score !== "number") {
+    return res.status(400).json({ error: "Invalid data" });
+  }
+
+  const leaderboard = new LeaderBoard();
+  try {
+    await leaderboard.connect();
+    const database = leaderboard.client.db(leaderboard.databaseName);
+    const usersCollection = database.collection(leaderboard.collectionName);
+
+    const existingUser = await usersCollection.findOne({ name });
+    const newScore = existingUser ? Math.max(score, existingUser.score) : score;
+
+    const result = await usersCollection.updateOne(
+      { name },
+      { $set: { score: newScore } },
+      { upsert: true }
+    );
+    console.log(`User ${name} updated with score: ${newScore}`);
+    res.json({ success: true, result });
+  } catch (error) {
+    console.error("Error updating user score:", error);
+    res.status(500).json({ error: "Failed to update user score" });
+  } finally {
+    await leaderboard.close();
+  }
 });
 
 app.listen(port, ipAddress, () => {
