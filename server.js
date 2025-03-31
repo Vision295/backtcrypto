@@ -65,8 +65,7 @@ app.get('/api/users', async (req, res) => {
       .sort({ score: -1 }) // Tri décroissant par score
       .toArray();
 
-    console.log("Fetched users from database:", userList); // Log fetched users
-    res.json(userList);
+    res.json(userList); // Envoyer les données triées
   } catch (error) {
     console.error('Error fetching users:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
