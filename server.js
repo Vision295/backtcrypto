@@ -21,7 +21,7 @@ async function fetchUsersPeriodically() {
     await leaderboard.connect();
     const database = leaderboard.client.db(leaderboard.databaseName);
     const usersCollection = database.collection(leaderboard.collectionName);
-    cachedUsers = await usersCollection.find({}, { projection: { name: 1, score: 1, _id: 0 } }).toArray();
+    cachedUsers = await usersCollection.find({}, { projection: { name: 1, score: 1, _id: 0 } }).sort({ score: -1 }).toArray(); // Sort by score descending
     console.log("Periodically fetched users:", cachedUsers);
   } catch (error) {
     console.error('Error fetching users periodically:', error);
@@ -52,9 +52,27 @@ setInterval(fetchCurrenciesPeriodically, 300);
 fetchUsersPeriodically();
 fetchCurrenciesPeriodically();
 
-app.get('/api/users', (req, res) => {
-  console.log("Sending cached users:", cachedUsers); // Debugging log
-  res.json(cachedUsers);
+app.get('/api/users', async (req, res) => {
+  const leaderboard = new LeaderBoard();
+  try {
+    await leaderboard.connect();
+    const database = leaderboard.client.db(leaderboard.databaseName);
+    const usersCollection = database.collection(leaderboard.collectionName);
+
+    // Récupérer les utilisateurs triés par score décroissant
+    const userList = await usersCollection
+      .find({}, { projection: { name: 1, score: 1, _id: 0 } })
+      .sort({ score: -1 }) // Tri décroissant par score
+      .toArray();
+
+    console.log("Fetched users from database:", userList); // Log fetched users
+    res.json(userList);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  } finally {
+    await leaderboard.close();
+  }
 });
 
 app.get('/api/currencies', (req, res) => {
