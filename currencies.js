@@ -6,10 +6,7 @@ class Currencies {
   constructor() {
     this.Db = process.env.ATLAS_URI;
     if (!this.Db) { throw new Error("ATLAS_URI is not defined in the environment variables."); }
-    this.client = new MongoClient(this.Db, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    this.client = new MongoClient(this.Db); // Removed deprecated options
     this.databaseName = "tcryptoproject";
     this.collectionName = "currencies";
   }
