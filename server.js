@@ -47,6 +47,7 @@ async function fetchCurrenciesPeriodically() {
 setInterval(fetchUsersPeriodically, 500);
 setInterval(fetchCurrenciesPeriodically, 300);
 
+
 // Initial fetch to populate caches
 fetchUsersPeriodically();
 fetchCurrenciesPeriodically();
