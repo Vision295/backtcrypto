@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const app = express();
 const port = 5000;
+const ipAddress = 'localhost'; // Revert to localhost
 
 app.use(cors()); // Enable CORS
 
@@ -60,6 +61,6 @@ app.get('/api/currencies', (req, res) => {
   res.json(cachedCurrencies);
 });
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+app.listen(port, ipAddress, () => {
+  console.log(`Server running at http://${ipAddress}:${port}`);
 });
