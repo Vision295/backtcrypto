@@ -128,6 +128,6 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-app.listen(port, ipAddress, () => {
-  console.log(`Server running at http://${ipAddress}:${port}`);
+app.listen(port, ip, () => {
+  console.log(`Server running at http://${ip}:${port}`);
 });
