@@ -12,6 +12,12 @@ app.use(cors()); // Enable CORS
 
 let cachedUsers = [];
 let cachedCurrencies = [];
+let cryptoPrices = {
+  BTC: 30000,
+  ETH: 2000,
+  BNB: 300,
+  TCR: 1,
+};
 
 // Function to periodically fetch users
 async function fetchUsersPeriodically() {
@@ -43,10 +49,19 @@ async function fetchCurrenciesPeriodically() {
   }
 }
 
+function updateCryptoPrices() {
+  Object.keys(cryptoPrices).forEach((crypto) => {
+    const currentPrice = cryptoPrices[crypto];
+    const variation = (Math.random() * 0.04 - 0.02) * currentPrice; // ±2% variation
+    const newPrice = Math.max(0.5, Math.min(currentPrice + variation, currentPrice * 1.1)); // Limit growth/decay
+    cryptoPrices[crypto] = parseFloat(newPrice.toFixed(2));
+  });
+}
+
 // Schedule periodic fetching every 5 minutes (300,000 ms)
 setInterval(fetchUsersPeriodically, 500);
 setInterval(fetchCurrenciesPeriodically, 300);
-
+setInterval(updateCryptoPrices, 5000); // Update prices every 5 seconds
 
 // Initial fetch to populate caches
 fetchUsersPeriodically();
@@ -79,6 +94,40 @@ app.get('/api/currencies', (req, res) => {
   res.json(cachedCurrencies);
 });
 
-app.listen(port, ip, () => {
-  console.log(`Server running at http://${ip}:${port}`);
+app.get('/api/crypto-prices', (req, res) => {
+  res.json(cryptoPrices);
+});
+
+app.post('/api/users', async (req, res) => {
+  const { name, score } = req.body;
+  if (!name || typeof score !== "number") {
+    return res.status(400).json({ error: "Invalid data" });
+  }
+
+  const leaderboard = new LeaderBoard();
+  try {
+    await leaderboard.connect();
+    const database = leaderboard.client.db(leaderboard.databaseName);
+    const usersCollection = database.collection(leaderboard.collectionName);
+
+    const existingUser = await usersCollection.findOne({ name });
+    const newScore = existingUser ? Math.max(score, existingUser.score) : score;
+
+    const result = await usersCollection.updateOne(
+      { name },
+      { $set: { score: newScore } },
+      { upsert: true }
+    );
+    console.log(`User ${name} updated with score: ${newScore}`);
+    res.json({ success: true, result });
+  } catch (error) {
+    console.error("Error updating user score:", error);
+    res.status(500).json({ error: "Failed to update user score" });
+  } finally {
+    await leaderboard.close();
+  }
+});
+
+app.listen(port, ipAddress, () => {
+  console.log(`Server running at http://${ipAddress}:${port}`);
 });
