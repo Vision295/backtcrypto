@@ -6,7 +6,7 @@ require('dotenv').config();
 
 const app = express();
 const port = 5000;
-const ip = "10.56.106.143"; // Revert to localhost
+const ip = "0.0.0.0"; // Listen on all network interfaces
 
 app.use(cors()); // Enable CORS
 
