@@ -9,6 +9,7 @@ const port = 5000;
 const ipAddress = 'localhost'; // Listen on all network interfaces
 
 app.use(cors()); // Enable CORS
+app.use(express.json()); // Add this middleware to parse JSON request bodies
 
 let cachedUsers = [];
 let cachedCurrencies = [];
@@ -128,6 +129,6 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-app.listen(port, ip, () => {
-  console.log(`Server running at http://${ip}:${port}`);
+app.listen(port, ipAddress, () => {
+  console.log(`Server running at http://${ipAddress}:${port}`);
 });
