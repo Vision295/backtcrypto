@@ -6,10 +6,9 @@ require('dotenv').config();
 
 const app = express();
 const port = 5000;
-const ipAddress = 'localhost'; // Revert to localhost
+const ip = "10.56.106.143"; // Revert to localhost
 
 app.use(cors()); // Enable CORS
-app.use(express.json()); // Middleware pour parser le JSON
 
 let cachedUsers = [];
 let cachedCurrencies = [];
@@ -21,7 +20,7 @@ async function fetchUsersPeriodically() {
     await leaderboard.connect();
     const database = leaderboard.client.db(leaderboard.databaseName);
     const usersCollection = database.collection(leaderboard.collectionName);
-    cachedUsers = await usersCollection.find({}, { projection: { name: 1, score: 1, _id: 0 } }).sort({ score: -1 }).toArray(); // Sort by score descending
+    cachedUsers = await usersCollection.find({}, { projection: { name: 1, score: 1, _id: 0 } }).toArray();
     console.log("Periodically fetched users:", cachedUsers);
   } catch (error) {
     console.error('Error fetching users periodically:', error);
@@ -48,31 +47,14 @@ async function fetchCurrenciesPeriodically() {
 setInterval(fetchUsersPeriodically, 500);
 setInterval(fetchCurrenciesPeriodically, 300);
 
+
 // Initial fetch to populate caches
 fetchUsersPeriodically();
 fetchCurrenciesPeriodically();
 
-app.get('/api/users', async (req, res) => {
-  const leaderboard = new LeaderBoard();
-  try {
-    await leaderboard.connect();
-    const database = leaderboard.client.db(leaderboard.databaseName);
-    const usersCollection = database.collection(leaderboard.collectionName);
-
-    // Récupérer les utilisateurs triés par score décroissant
-    const userList = await usersCollection
-      .find({}, { projection: { name: 1, score: 1, _id: 0 } })
-      .sort({ score: -1 }) // Tri décroissant par score
-      .toArray();
-
-    console.log("Fetched users from database:", userList); // Log fetched users
-    res.json(userList);
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ error: 'Failed to fetch users' });
-  } finally {
-    await leaderboard.close();
-  }
+app.get('/api/users', (req, res) => {
+  console.log("Sending cached users:", cachedUsers); // Debugging log
+  res.json(cachedUsers);
 });
 
 app.get('/api/currencies', (req, res) => {
@@ -80,36 +62,6 @@ app.get('/api/currencies', (req, res) => {
   res.json(cachedCurrencies);
 });
 
-app.post('/api/users', async (req, res) => {
-  const { name, score } = req.body;
-  if (!name || typeof score !== "number") {
-    return res.status(400).json({ error: "Invalid data" });
-  }
-
-  const leaderboard = new LeaderBoard();
-  try {
-    await leaderboard.connect();
-    const database = leaderboard.client.db(leaderboard.databaseName);
-    const usersCollection = database.collection(leaderboard.collectionName);
-
-    const existingUser = await usersCollection.findOne({ name });
-    const newScore = existingUser ? Math.max(score, existingUser.score) : score;
-
-    const result = await usersCollection.updateOne(
-      { name },
-      { $set: { score: newScore } },
-      { upsert: true }
-    );
-    console.log(`User ${name} updated with score: ${newScore}`);
-    res.json({ success: true, result });
-  } catch (error) {
-    console.error("Error updating user score:", error);
-    res.status(500).json({ error: "Failed to update user score" });
-  } finally {
-    await leaderboard.close();
-  }
-});
-
 app.listen(port, ipAddress, () => {
-  console.log(`Server running at http://${ipAddress}:${port}`);
+  console.log(`Server running at http://${ip}:${port}`);
 });
