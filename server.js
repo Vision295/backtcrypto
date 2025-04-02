@@ -79,6 +79,6 @@ app.get('/api/currencies', (req, res) => {
   res.json(cachedCurrencies);
 });
 
-app.listen(port, ipAddress, () => {
+app.listen(port, ip, () => {
   console.log(`Server running at http://${ip}:${port}`);
 });
