@@ -3,6 +3,11 @@ const cors = require('cors'); // Import CORS
 const Users = require('./testMangoDB'); // Correctly import the Users class
 require('dotenv').config();
 
+if (!process.env.ATLAS_URI) {
+  console.error('Error: ATLAS_URI is not defined in the environment variables.');
+  process.exit(1); // Exit the application if ATLAS_URI is missing
+}
+
 const app = express();
 const port = 5000;
 
