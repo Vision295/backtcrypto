@@ -6,10 +6,9 @@ require('dotenv').config();
 
 const app = express();
 const port = 5000;
-const ipAddress = 'localhost'; // Revert to localhost
+const ip = "10.56.106.143"; // Revert to localhost
 
 app.use(cors()); // Enable CORS
-app.use(express.json()); // Middleware pour parser le JSON
 
 let cachedUsers = [];
 let cachedCurrencies = [];
@@ -27,7 +26,7 @@ async function fetchUsersPeriodically() {
     await leaderboard.connect();
     const database = leaderboard.client.db(leaderboard.databaseName);
     const usersCollection = database.collection(leaderboard.collectionName);
-    cachedUsers = await usersCollection.find({}, { projection: { name: 1, score: 1, _id: 0 } }).sort({ score: -1 }).toArray(); // Sort by score descending
+    cachedUsers = await usersCollection.find({}, { projection: { name: 1, score: 1, _id: 0 } }).toArray();
     console.log("Periodically fetched users:", cachedUsers);
   } catch (error) {
     console.error('Error fetching users periodically:', error);
