@@ -12,12 +12,47 @@ app.use(cors()); // Enable CORS
 
 let cachedUsers = [];
 let cachedCurrencies = [];
+// Mise à jour des prix des cryptos pour correspondre au frontend
 let cryptoPrices = {
-  BTC: 30000,
-  ETH: 2000,
+  SHIB: 0.00001,
+  DOGE: 0.06,
+  LTC: 70,
+  ADA: 0.4,
+  DOT: 5,
+  SOL: 20,
+  AVAX: 15,
   BNB: 300,
-  TCR: 1,
+  XRP: 0.5,
+  ETH: 2000,
+  BTC: 30000,
 };
+
+// Ajout des balances initiales des cryptos
+let cryptoBalances = {
+  SHIB: 0,
+  DOGE: 0,
+  LTC: 0,
+  ADA: 0,
+  DOT: 0,
+  SOL: 0,
+  AVAX: 0,
+  BNB: 0,
+  XRP: 0,
+  ETH: 0,
+  BTC: 0,
+};function updateCryptoPrices() {
+  Object.keys(cryptoPrices).forEach((crypto) => {
+    const currentPrice = cryptoPrices[crypto];
+    const variation = (Math.random() * 0.04 - 0.02) * currentPrice; // ±2% variation
+    const newPrice = Math.max(0.5, Math.min(currentPrice + variation, currentPrice * 1.1)); // Limit growth/decay
+    cryptoPrices[crypto] = parseFloat(newPrice.toFixed(2));
+  });
+}
+
+// Route pour récupérer les balances des cryptos
+app.get('/api/crypto-balances', (req, res) => {
+  res.json(cryptoBalances);
+});
 
 // Function to periodically fetch users
 async function fetchUsersPeriodically() {
@@ -49,12 +84,16 @@ async function fetchCurrenciesPeriodically() {
   }
 }
 
+// Mise à jour des prix des cryptos avec des variations réalistes
 function updateCryptoPrices() {
   Object.keys(cryptoPrices).forEach((crypto) => {
     const currentPrice = cryptoPrices[crypto];
-    const variation = (Math.random() * 0.04 - 0.02) * currentPrice; // ±2% variation
-    const newPrice = Math.max(0.5, Math.min(currentPrice + variation, currentPrice * 1.1)); // Limit growth/decay
-    cryptoPrices[crypto] = parseFloat(newPrice.toFixed(2));
+    const volatilityFactor = crypto === 'BTC' ? 0.02 : 
+                             crypto === 'ETH' ? 0.025 : 
+                             crypto === 'SHIB' ? 0.04 : 0.03;
+    const variation = (Math.random() * volatilityFactor * 2 - volatilityFactor) * currentPrice;
+    const newPrice = Math.max(0.00001, currentPrice + variation); // Empêcher les prix négatifs
+    cryptoPrices[crypto] = parseFloat(newPrice.toFixed(6));
   });
 }
 
