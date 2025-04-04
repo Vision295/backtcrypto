@@ -6,9 +6,10 @@ require('dotenv').config();
 
 const app = express();
 const port = 5000;
-const ip = "0.0.0.0"; // Listen on all network interfaces
+const ipAddress = 'localhost'; // Listen on all network interfaces
 
 app.use(cors()); // Enable CORS
+app.use(express.json()); // Add this middleware to parse JSON request bodies
 
 let cachedUsers = [];
 let cachedCurrencies = [];
