@@ -1,0 +1,59 @@
+{
+  "cryptocurrencies": {
+    "BTC": {
+      "price": 30000.006424,
+      "variation": 0.02,
+      "randomDistribution": "normal 0 0.02"
+    },
+    "ETH": {
+      "price": 1999.98758,
+      "variation": 0.025,
+      "randomDistribution": "normal 0 0.025"
+    },
+    "SHIB": {
+      "price": 0.053695,
+      "variation": 0.04,
+      "randomDistribution": "normal 0 0.04"
+    },
+    "DOGE": {
+      "price": 0.080697,
+      "variation": 0.03,
+      "randomDistribution": "normal 0 0.03"
+    },
+    "ADA": {
+      "price": 0.440649,
+      "variation": 0.03,
+      "randomDistribution": "normal 0 0.03"
+    },
+    "BNB": {
+      "price": 299.984197,
+      "variation": 0.02,
+      "randomDistribution": "normal 0 0.02"
+    },
+    "XRP": {
+      "price": 0.517314,
+      "variation": 0.03,
+      "randomDistribution": "normal 0 0.03"
+    },
+    "LTC": {
+      "price": 70.029444,
+      "variation": 0.03,
+      "randomDistribution": "normal 0 0.03"
+    },
+    "DOT": {
+      "price": 4.979584,
+      "variation": 0.03,
+      "randomDistribution": "normal 0 0.03"
+    },
+    "SOL": {
+      "price": 20.000781,
+      "variation": 0.03,
+      "randomDistribution": "normal 0 0.03"
+    },
+    "AVAX": {
+      "price": 14.930819,
+      "variation": 0.03,
+      "randomDistribution": "normal 0 0.03"
+    }
+  }
+}

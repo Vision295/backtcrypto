@@ -41,7 +41,9 @@ let cryptoBalances = {
   XRP: 0,
   ETH: 0,
   BTC: 0,
-};function updateCryptoPrices() {
+};
+
+function updateCryptoPrices() {
   Object.keys(cryptoPrices).forEach((crypto) => {
     const currentPrice = cryptoPrices[crypto];
     const variation = (Math.random() * 0.04 - 0.02) * currentPrice; // ±2% variation
