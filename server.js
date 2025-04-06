@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { MongoClient } = require('mongodb');
-require('dotenv').config();
+require('dotenv').config({ path: './config.env' });
 
 // Server configuration
 const app = express();
