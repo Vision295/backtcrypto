@@ -9,6 +9,7 @@ class Leaderboard {
     this.client = new MongoClient(this.Db); // Removed deprecated options
     this.databaseName = "tcryptoproject";
     this.collectionName = "leaderboard";
+    this.content = null;
   }
 
   async connect() {
@@ -32,12 +33,11 @@ class Leaderboard {
     }
   }
 
-  async listUsers() {
+  async getContent() {
     try {
       const database = this.client.db(this.databaseName);
       const usersCollection = database.collection(this.collectionName);
-      const users = await usersCollection.find({}, { projection: { name: 1, score: 1, _id: 0 } }).toArray(); // Project only name and score
-      console.log("Users in the database:", users);
+      this.content = await usersCollection.find({}, { projection: { name: 1, score: 1, _id: 0 } }).toArray();
     } catch (e) {
       console.error("Error listing users:", e);
     }

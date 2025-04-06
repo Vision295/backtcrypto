@@ -43,6 +43,13 @@ let cryptoBalances = {
   BTC: 0,
 };
 
+let leaderboard = new LeaderBoard();
+let currencies = new Currencies();
+
+leaderboard.connect()
+currencies.connect()
+
+
 function updateCryptoPrices() {
   Object.keys(cryptoPrices).forEach((crypto) => {
     const currentPrice = cryptoPrices[crypto];
@@ -59,32 +66,22 @@ app.get('/api/crypto-balances', (req, res) => {
 
 // Function to periodically fetch users
 async function fetchUsersPeriodically() {
-  const leaderboard = new LeaderBoard();
   try {
-    await leaderboard.connect();
-    const database = leaderboard.client.db(leaderboard.databaseName);
-    const usersCollection = database.collection(leaderboard.collectionName);
-    cachedUsers = await usersCollection.find({}, { projection: { name: 1, score: 1, _id: 0 } }).toArray();
-    console.log("Periodically fetched users:", cachedUsers);
+    await leaderboard.getContent();
+    console.log("Periodically fetched users"); 
   } catch (error) {
     console.error('Error fetching users periodically:', error);
-  } finally {
-    await leaderboard.close();
-  }
+  } 
 }
 
 // Function to periodically fetch currencies
 async function fetchCurrenciesPeriodically() {
-  const currencies = new Currencies();
   try {
-    await currencies.connect();
-    cachedCurrencies = await currencies.fetchAllCurrencies();
-    console.log("Periodically fetched currencies:", cachedCurrencies);
+    await currencies.getContent();
+    console.log("Periodically fetched currencies");  // Debugging log
   } catch (error) {
     console.error('Error fetching currencies periodically:', error);
-  } finally {
-    await currencies.close();
-  }
+  } 
 }
 
 // Mise à jour des prix des cryptos avec des variations réalistes
