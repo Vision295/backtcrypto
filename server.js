@@ -68,9 +68,7 @@ async function fetchUsersPeriodically() {
     console.log("Periodically fetched users:", cachedUsers);
   } catch (error) {
     console.error('Error fetching users periodically:', error);
-  } finally {
-    await leaderboard.close();
-  }
+  } 
 }
 
 // Function to periodically fetch currencies
@@ -82,9 +80,7 @@ async function fetchCurrenciesPeriodically() {
     console.log("Periodically fetched currencies:", cachedCurrencies);
   } catch (error) {
     console.error('Error fetching currencies periodically:', error);
-  } finally {
-    await currencies.close();
-  }
+  } 
 }
 
 // Mise à jour des prix des cryptos avec des variations réalistes
@@ -126,8 +122,6 @@ app.get('/api/users', async (req, res) => {
   } catch (error) {
     console.error('Error fetching users:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
-  } finally {
-    await leaderboard.close();
   }
 });
 
@@ -165,9 +159,7 @@ app.post('/api/users', async (req, res) => {
   } catch (error) {
     console.error("Error updating user score:", error);
     res.status(500).json({ error: "Failed to update user score" });
-  } finally {
-    await leaderboard.close();
-  }
+  } 
 });
 
 app.listen(port, ipAddress, () => {
