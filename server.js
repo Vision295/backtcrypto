@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { MongoClient } = require('mongodb');
-require('dotenv').config({ path: './config.env' });
+require('dotenv').config();
 
 // Server configuration
 const app = express();
@@ -153,25 +153,103 @@ async function updateCryptoPrices() {
     });
     
     console.log("Crypto prices updated:", JSON.stringify(marketData.cryptoPrices));
+    await leaderboard.connect();
+    const database = leaderboard.client.db(leaderboard.databaseName);
+    const usersCollection = database.collection(leaderboard.collectionName);
+    cachedUsers = await usersCollection.find({}, { projection: { name: 1, score: 1, _id: 0 } }).toArray();
+    console.log("Periodically fetched users:", cachedUsers);
+  } catch (error) {
+    console.error('Error fetching users periodically:', error);
+  } 
+}
+
+// Function to periodically fetch currencies
+async function fetchCurrenciesPeriodically() {
+  const currencies = new Currencies();
+  try {
+    await currencies.connect();
+    cachedCurrencies = await currencies.fetchAllCurrencies();
+    console.log("Periodically fetched currencies:", cachedCurrencies);
   } catch (error) {
     console.error('Error updating crypto prices:', error);
   } finally {
     await db.close();
   }
+    console.error('Error fetching currencies periodically:', error);
+  } 
+let cachedCurrencies = [];
+// Mise à jour des prix des cryptos pour correspondre au frontend
+let cryptoPrices = {
+  SHIB: 0.00001,
+  DOGE: 0.06,
+  LTC: 70,
+  ADA: 0.4,
+  DOT: 5,
+  SOL: 20,
+  AVAX: 15,
+  BNB: 300,
+  XRP: 0.5,
+  ETH: 2000,
+  BTC: 30000,
+};
+
+// Ajout des balances initiales des cryptos
+let cryptoBalances = {
+  SHIB: 0,
+  DOGE: 0,
+  LTC: 0,
+  ADA: 0,
+  DOT: 0,
+  SOL: 0,
+  AVAX: 0,
+  BNB: 0,
+  XRP: 0,
+  ETH: 0,
+  BTC: 0,
+};
+
+let leaderboard = new LeaderBoard();
+let currencies = new Currencies();
+
+function updateCryptoPrices() {
+  Object.keys(cryptoPrices).forEach((crypto) => {
+    const currentPrice = cryptoPrices[crypto];
+    const variation = (Math.random() * 0.04 - 0.02) * currentPrice; // ±2% variation
+    const newPrice = Math.max(0.5, Math.min(currentPrice + variation, currentPrice * 1.1)); // Limit growth/decay
+    cryptoPrices[crypto] = parseFloat(newPrice.toFixed(2));
+  });
 }
 
-/**
- * Fetch and cache users periodically for leaderboard
- */
-async function fetchUsersPeriodically() {
-  const db = new DatabaseConnection();
+// Route pour récupérer les balances des cryptos
+// TODO : changeer ça !
+app.get('/api/crypto-balances', (req, res) => {
+  res.json(cryptoBalances);
+});
+
+
+
+// Mise à jour des prix des cryptos avec des variations réalistes
+function updateCryptoPrices() {
+  Object.keys(cryptoPrices).forEach((crypto) => {
+    const currentPrice = cryptoPrices[crypto];
+    const volatilityFactor = crypto === 'BTC' ? 0.02 : 
+                             crypto === 'ETH' ? 0.025 : 
+                             crypto === 'SHIB' ? 0.04 : 0.03;
+    const variation = (Math.random() * volatilityFactor * 2 - volatilityFactor) * currentPrice;
+    const newPrice = Math.max(0.00001, currentPrice + variation); // Empêcher les prix négatifs
+    cryptoPrices[crypto] = parseFloat(newPrice.toFixed(6));
+  });
+}
+
+// Schedule periodic fetching every 5 minutes (300,000 ms)
+setInterval(currencies.getContent, 500);
+setInterval(leaderboard.getContent, 300);
+setInterval(updateCryptoPrices, 5000); // Update prices every 5 seconds
+
+app.get('/api/users', async (req, res) => {
   try {
-    await db.connect();
-    const database = db.getDb();
-    const usersCollection = database.collection(USERS_COLLECTION);
-    
-    // Get users sorted by score in descending order
-    cachedUsers = await usersCollection
+    // Récupérer les utilisateurs triés par score décroissant
+    const userList = await leaderboard.content
       .find({}, { projection: { name: 1, score: 1, _id: 0 } })
       .sort({ score: -1 })
       .toArray();
@@ -183,9 +261,7 @@ async function fetchUsersPeriodically() {
     console.log(`Updated user cache: ${cachedUsers.length} users, total balance: $${marketData.totalUSDBalance}`);
   } catch (error) {
     console.error('Error fetching users:', error);
-  } finally {
-    await db.close();
-  }
+  } 
 }
 
 // Initialize data and schedule periodic updates
@@ -206,7 +282,10 @@ app.get('/api/users', (req, res) => {
   res.json(cachedUsers);
 });
 
-// Get current crypto prices
+app.get('/api/currencies', (req, res) => {
+  res.json(currencies.content);
+});
+
 app.get('/api/crypto-prices', (req, res) => {
   res.json(marketData.cryptoPrices);
 });
@@ -225,6 +304,8 @@ app.post('/api/users', async (req, res) => {
     return res.status(400).json({ error: "Invalid data" });
   }
 
+<<<<<<< HEAD
+<<<<<<< HEAD
   const db = new DatabaseConnection();
   try {
     await db.connect();
@@ -244,6 +325,14 @@ app.post('/api/users', async (req, res) => {
       { upsert: true }
     );
     
+=======
+  try {
+    const newScore = leaderboard.addUser(name, score);
+>>>>>>> 933c945 (addition to the class)
+=======
+  try {
+    const newScore = leaderboard.addUser(name, score);
+>>>>>>> 933c9454ed8713a1cff6b8f0fe3dc719d63f7572
     console.log(`User ${name} updated with score: ${newScore}`);
     
     // Trigger immediate user cache update
@@ -253,9 +342,7 @@ app.post('/api/users', async (req, res) => {
   } catch (error) {
     console.error("Error updating user score:", error);
     res.status(500).json({ error: "Failed to update user score" });
-  } finally {
-    await db.close();
-  }
+  } 
 });
 
 // Start server
