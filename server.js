@@ -35,6 +35,26 @@ setInterval(() => {
   }
 }, 100); // 10,000 ms = 10 seconds
 
+setInterval(() => {
+  if (currencies) {
+    currencies.getRandomEvent(); // Call the update method
+  }
+}, 10000); // 10,000 ms = 10 seconds
+
+
+
+app.get('/api/events', async (req, res) => {
+  try {
+    await currencies;
+    await currencies.getContent(); // Fetch the latest content from the database
+    console.log("Sending cached events");
+    res.json(currencies.content); // Send the cached events
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    res.status(500).json({ error: 'Failed to fetch events' });
+  }
+});
+
 app.get('/api/crypto-prices', async (req, res) => {
   try {
     await currencies; // Ensure the currencies instance is initialized

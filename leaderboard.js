@@ -2,8 +2,6 @@ class Leaderboard {
 
   constructor(client) {
     this.client = client  // Removed deprecated options
-    this.databaseName = "tcryptoproject";
-    this.collectionName = "leaderboard";
     this.content = null;
     this.database = null;
     this.usersCollection = null;
@@ -11,8 +9,8 @@ class Leaderboard {
 
   async fetchDB() {
     try {
-      this.database = await this.client.db(this.databaseName);
-      this.usersCollection = await this.database.collection(this.collectionName);
+      this.database = await this.client.db("tcryptoproject");
+      this.usersCollection = await this.database.collection("leaderboard");
     } catch (e) {
       console.error("Error listing users:", e);
     }

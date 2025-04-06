@@ -2,11 +2,10 @@ class Currencies {
 
   constructor(client) {
     this.client = client  // Removed deprecated options
-    this.databaseName = "tcryptoproject";
-    this.collectionName = "currencies";
     this.content = null;
     this.database = null;
     this.currenciesCollection = null;
+    this.eventsCollection = null;
     this.cryptoPrices = {
       SHIB: 0.00001,
       DOGE: 0.06,
@@ -34,12 +33,15 @@ class Currencies {
       ETH: 0,
       BTC: 0,
       };
+
+      this.event = null;
   }
 
   async fetchDB() {
     try {
-      this.database = await this.client.db(this.databaseName);
-      this.currenciesCollection = await this.database.collection(this.collectionName);
+      this.database = await this.client.db("tcryptoproject");
+      this.currenciesCollection = await this.database.collection("currencies");
+      this.eventsCollection = await this.database.collection("events");
     } catch (e) {
       console.error("Error fetching currencies:", e);
     }
@@ -70,6 +72,19 @@ class Currencies {
       this.cryptoPrices[crypto] = parseFloat(newPrice);
     });
   }
+
+  async getRandomEvent() {
+      try {
+        await this.fetchDB()
+        const randomEvent = await this.eventsCollection.aggregate([{ $sample: { size: 1 } }]).toArray();
+        this.event = randomEvent[0];
+        this.applyEvent();
+      } catch (e) {
+        console.error("Error fetching random event:", e);
+        return null;
+      }
+  }
+
 }
 
 module.exports = Currencies;
