@@ -67,7 +67,7 @@ class Currencies {
                              crypto === 'SHIB' ? 0.04 : 0.03;
       const variation = (Math.random() * volatilityFactor * 2 - volatilityFactor) * currentPrice;
       const newPrice = Math.max(0.00001, currentPrice + variation); // Empêcher les prix négatifs
-      this.cryptoPrices[crypto] = parseFloat(newPrice.toFixed(6));
+      this.cryptoPrices[crypto] = parseFloat(newPrice);
     });
   }
 }

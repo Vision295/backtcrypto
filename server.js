@@ -39,7 +39,7 @@ app.get('/api/crypto-prices', async (req, res) => {
   try {
     await currencies; // Ensure the currencies instance is initialized
     await currencies.getContent(); // Fetch the latest content from the database
-    console.log("Sending cached crypto prices");
+    console.log("Sending cached crypto prices", currencies.cryptoPrices);
     res.json(currencies.cryptoPrices); // Send the cached crypto prices
   } catch (error) {
     console.error('Error fetching crypto prices:', error);
