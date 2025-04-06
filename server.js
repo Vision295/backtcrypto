@@ -11,7 +11,6 @@ const ipAddress = 'localhost'; // Listen on all network interfaces
 app.use(cors()); // Enable CORS
 app.use(express.json()); // Add this middleware to parse JSON request bodies
 
-let cachedUsers = [];
 let cachedCurrencies = [];
 // Mise à jour des prix des cryptos pour correspondre au frontend
 let cryptoPrices = {
@@ -43,6 +42,9 @@ let cryptoBalances = {
   BTC: 0,
 };
 
+let leaderboard = new LeaderBoard();
+let currencies = new Currencies();
+
 function updateCryptoPrices() {
   Object.keys(cryptoPrices).forEach((crypto) => {
     const currentPrice = cryptoPrices[crypto];
@@ -53,35 +55,11 @@ function updateCryptoPrices() {
 }
 
 // Route pour récupérer les balances des cryptos
+// TODO : changeer ça !
 app.get('/api/crypto-balances', (req, res) => {
   res.json(cryptoBalances);
 });
 
-// Function to periodically fetch users
-async function fetchUsersPeriodically() {
-  const leaderboard = new LeaderBoard();
-  try {
-    await leaderboard.connect();
-    const database = leaderboard.client.db(leaderboard.databaseName);
-    const usersCollection = database.collection(leaderboard.collectionName);
-    cachedUsers = await usersCollection.find({}, { projection: { name: 1, score: 1, _id: 0 } }).toArray();
-    console.log("Periodically fetched users:", cachedUsers);
-  } catch (error) {
-    console.error('Error fetching users periodically:', error);
-  } 
-}
-
-// Function to periodically fetch currencies
-async function fetchCurrenciesPeriodically() {
-  const currencies = new Currencies();
-  try {
-    await currencies.connect();
-    cachedCurrencies = await currencies.fetchAllCurrencies();
-    console.log("Periodically fetched currencies:", cachedCurrencies);
-  } catch (error) {
-    console.error('Error fetching currencies periodically:', error);
-  } 
-}
 
 // Mise à jour des prix des cryptos avec des variations réalistes
 function updateCryptoPrices() {
@@ -97,23 +75,14 @@ function updateCryptoPrices() {
 }
 
 // Schedule periodic fetching every 5 minutes (300,000 ms)
-setInterval(fetchUsersPeriodically, 500);
-setInterval(fetchCurrenciesPeriodically, 300);
+setInterval(currencies.getContent, 500);
+setInterval(leaderboard.getContent, 300);
 setInterval(updateCryptoPrices, 5000); // Update prices every 5 seconds
 
-// Initial fetch to populate caches
-fetchUsersPeriodically();
-fetchCurrenciesPeriodically();
-
 app.get('/api/users', async (req, res) => {
-  const leaderboard = new LeaderBoard();
   try {
-    await leaderboard.connect();
-    const database = leaderboard.client.db(leaderboard.databaseName);
-    const usersCollection = database.collection(leaderboard.collectionName);
-
     // Récupérer les utilisateurs triés par score décroissant
-    const userList = await usersCollection
+    const userList = await leaderboard.content
       .find({}, { projection: { name: 1, score: 1, _id: 0 } })
       .sort({ score: -1 }) // Tri décroissant par score
       .toArray();
@@ -126,8 +95,7 @@ app.get('/api/users', async (req, res) => {
 });
 
 app.get('/api/currencies', (req, res) => {
-  console.log("Sending cached currencies:", cachedCurrencies); // Debugging log
-  res.json(cachedCurrencies);
+  res.json(currencies.content);
 });
 
 app.get('/api/crypto-prices', (req, res) => {
@@ -140,20 +108,8 @@ app.post('/api/users', async (req, res) => {
     return res.status(400).json({ error: "Invalid data" });
   }
 
-  const leaderboard = new LeaderBoard();
   try {
-    await leaderboard.connect();
-    const database = leaderboard.client.db(leaderboard.databaseName);
-    const usersCollection = database.collection(leaderboard.collectionName);
-
-    const existingUser = await usersCollection.findOne({ name });
-    const newScore = existingUser ? Math.max(score, existingUser.score) : score;
-
-    const result = await usersCollection.updateOne(
-      { name },
-      { $set: { score: newScore } },
-      { upsert: true }
-    );
+    const newScore = leaderboard.addUser(name, score);
     console.log(`User ${name} updated with score: ${newScore}`);
     res.json({ success: true, result });
   } catch (error) {

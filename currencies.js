@@ -9,6 +9,8 @@ class Currencies {
     this.client = new MongoClient(this.Db); // Removed deprecated options
     this.databaseName = "tcryptoproject";
     this.collectionName = "currencies";
+    this.currencies = null; // Initialize currencies to null
+    this.connect();
   }
 
   async connect() {
@@ -20,16 +22,14 @@ class Currencies {
     }
   }
 
-  async fetchAllCurrencies() {
+  async getContent() {
     try {
       const database = this.client.db(this.databaseName);
       const currenciesCollection = database.collection(this.collectionName);
-      const currencies = await currenciesCollection.find({}, { projection: { name: 1, value: 1, total: 1, available: 1, _id: 0 } }).toArray();
-      console.log("Currencies in the database:", currencies);
-      return currencies;
+      this.content = await currenciesCollection.find({}, { projection: { name: 1, value: 1, total: 1, available: 1, _id: 0 } }).toArray();
+      console.log("Currencies in the database:", this.content);
     } catch (e) {
       console.error("Error fetching currencies:", e);
-      throw e;
     }
   }
 
