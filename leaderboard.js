@@ -9,7 +9,7 @@ class Leaderboard {
     this.usersCollection = null;
   }
 
-  async getContent() {
+  async fetchDB() {
     try {
       this.database = await this.client.db(this.databaseName);
       this.usersCollection = await this.database.collection(this.collectionName);
@@ -20,7 +20,7 @@ class Leaderboard {
 
   async addUser(name, score) {
     try {
-      await this.getContent()
+      await this.fetchDB()
 
       const existingUser = await this.usersCollection.findOne({ name });
       const newScore = existingUser ? Math.max(score, existingUser.score) : score;
@@ -37,7 +37,7 @@ class Leaderboard {
   }
 
   async getSortedContent() {
-      await this.getContent()
+      await this.fetchDB()
       this.content = await this.usersCollection
             .find({}, { projection: { name: 1, score: 1, _id: 0 } })
             .sort({ score: -1 }) // Tri décroissant par score

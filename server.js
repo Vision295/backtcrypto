@@ -14,27 +14,49 @@ app.use(express.json()); // Add this middleware to parse JSON request bodies
 
 let client; // Declare the client variable
 let leaderboard; // Declare the leaderboard variable
+let currencies;
 
 // Establish the database connection once when the server starts
 (async () => {
   try {
     client = await connectToDatabase(); // Get the client object
     leaderboard = new Leaderboard(client); // Create an instance of the LeaderBoard class with the client
+    currencies = new Currencies(client); // Create an instance of the Currencies class with the client
   } catch (error) {
     console.error('Failed to initialize the application:', error);
     process.exit(1); // Exit the application if initialization fails
   }
 })();
 
+// Periodically update crypto prices every 10 seconds
+setInterval(() => {
+  if (currencies) {
+    currencies.updateCryptoPrices(); // Call the update method
+  }
+}, 100); // 10,000 ms = 10 seconds
 
-
-
-app.get('/api/crypto-prices', (req, res) => {
-      console.log("Sending cached crypto prices");
+app.get('/api/crypto-prices', async (req, res) => {
+  try {
+    await currencies; // Ensure the currencies instance is initialized
+    await currencies.getContent(); // Fetch the latest content from the database
+    console.log("Sending cached crypto prices");
+    res.json(currencies.cryptoPrices); // Send the cached crypto prices
+  } catch (error) {
+    console.error('Error fetching crypto prices:', error);
+    res.status(500).json({ error: 'Failed to fetch crypto prices' });
+  }
 });
 
 app.get('/api/currencies', async (req, res) => {
-  console.log("Sending cached currencies");
+  try {
+    await currencies;
+    await currencies.getContent(); // Fetch the latest content from the database
+    console.log("Sending cached currencies");
+    res.json(currencies.cryptoPrices); // Send the cached currencies
+  } catch (error) {
+    console.error('Error fetching currencies:', error);
+    res.status(500).json({ error: 'Failed to fetch currencies' });
+  }
 });
 
 // fetch a new user
