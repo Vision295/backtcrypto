@@ -1,24 +1,10 @@
-const { MongoClient } = require('mongodb');
-require('dotenv').config({ path: './config.env' });
-
 class Currencies {
 
-  constructor() {
-    this.Db = process.env.ATLAS_URI;
-    if (!this.Db) { throw new Error("ATLAS_URI is not defined in the environment variables."); }
-    this.client = new MongoClient(this.Db); // Removed deprecated options
+  constructor(client) {
+    this.client = client  // Removed deprecated options
     this.databaseName = "tcryptoproject";
     this.collectionName = "currencies";
     this.content = null;
-  }
-
-  async connect() {
-    try {
-      await this.client.connect();
-      console.log("Connected to MongoDB");
-    } catch (e) {
-      console.error("Error connecting to MongoDB:", e);
-    }
   }
 
   async getContent() {
@@ -29,15 +15,6 @@ class Currencies {
     } catch (e) {
       console.error("Error fetching currencies:", e);
       throw e;
-    }
-  }
-
-  async close() {
-    try {
-      await this.client.close();
-      console.log("Connection to MongoDB closed");
-    } catch (e) {
-      console.error("Error closing connection:", e);
     }
   }
 }
