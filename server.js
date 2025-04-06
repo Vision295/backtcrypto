@@ -153,12 +153,31 @@ async function updateCryptoPrices() {
     });
     
     console.log("Crypto prices updated:", JSON.stringify(marketData.cryptoPrices));
+    await leaderboard.connect();
+    const database = leaderboard.client.db(leaderboard.databaseName);
+    const usersCollection = database.collection(leaderboard.collectionName);
+    cachedUsers = await usersCollection.find({}, { projection: { name: 1, score: 1, _id: 0 } }).toArray();
+    console.log("Periodically fetched users:", cachedUsers);
+  } catch (error) {
+    console.error('Error fetching users periodically:', error);
+  } 
+}
+
+// Function to periodically fetch currencies
+async function fetchCurrenciesPeriodically() {
+  const currencies = new Currencies();
+  try {
+    await currencies.connect();
+    cachedCurrencies = await currencies.fetchAllCurrencies();
+    console.log("Periodically fetched currencies:", cachedCurrencies);
   } catch (error) {
     console.error('Error updating crypto prices:', error);
   } finally {
     await db.close();
   }
-}
+    console.error('Error fetching currencies periodically:', error);
+  } 
+
 
 /**
  * Fetch and cache users periodically for leaderboard
@@ -185,6 +204,7 @@ async function fetchUsersPeriodically() {
     console.error('Error fetching users:', error);
   } finally {
     await db.close();
+    res.status(500).json({ error: 'Failed to fetch users' });
   }
 }
 
@@ -253,9 +273,7 @@ app.post('/api/users', async (req, res) => {
   } catch (error) {
     console.error("Error updating user score:", error);
     res.status(500).json({ error: "Failed to update user score" });
-  } finally {
-    await db.close();
-  }
+  } 
 });
 
 // Start server
