@@ -26,9 +26,15 @@ let leaderboard; // Declare the leaderboard variable
   }
 })();
 
-// Basic route to test the connection
-app.get('/', (req, res) => {
-  res.send('Server is running and connected to the frontend!');
+
+
+
+app.get('/api/crypto-prices', (req, res) => {
+      console.log("Sending cached crypto prices");
+});
+
+app.get('/api/currencies', async (req, res) => {
+  console.log("Sending cached currencies");
 });
 
 // fetch a new user
@@ -61,7 +67,6 @@ app.post('/api/users', async (req, res) => {
     res.status(500).json({ error: "Failed to add user" }); // Send an error response
   }
 });
-
 
 // Start the server
 app.listen(port, () => {
