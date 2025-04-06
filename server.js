@@ -16,6 +16,7 @@ const USERS_COLLECTION = 'users';
 const MARKET_COLLECTION = 'market_data';
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
@@ -179,6 +180,8 @@ async function fetchCurrenciesPeriodically() {
     console.error('Error fetching currencies periodically:', error);
   } 
 =======
+=======
+>>>>>>> 933c9454ed8713a1cff6b8f0fe3dc719d63f7572
 let cachedCurrencies = [];
 // Mise à jour des prix des cryptos pour correspondre au frontend
 let cryptoPrices = {
@@ -228,6 +231,7 @@ app.get('/api/crypto-balances', (req, res) => {
   res.json(cryptoBalances);
 });
 
+<<<<<<< HEAD
 >>>>>>> 933c945 (addition to the class)
 
 
@@ -245,6 +249,22 @@ async function fetchUsersPeriodically() {
     // Get users sorted by score in descending order
     cachedUsers = await usersCollection
 =======
+=======
+
+// Mise à jour des prix des cryptos avec des variations réalistes
+function updateCryptoPrices() {
+  Object.keys(cryptoPrices).forEach((crypto) => {
+    const currentPrice = cryptoPrices[crypto];
+    const volatilityFactor = crypto === 'BTC' ? 0.02 : 
+                             crypto === 'ETH' ? 0.025 : 
+                             crypto === 'SHIB' ? 0.04 : 0.03;
+    const variation = (Math.random() * volatilityFactor * 2 - volatilityFactor) * currentPrice;
+    const newPrice = Math.max(0.00001, currentPrice + variation); // Empêcher les prix négatifs
+    cryptoPrices[crypto] = parseFloat(newPrice.toFixed(6));
+  });
+}
+
+>>>>>>> 933c9454ed8713a1cff6b8f0fe3dc719d63f7572
 // Schedule periodic fetching every 5 minutes (300,000 ms)
 setInterval(currencies.getContent, 500);
 setInterval(leaderboard.getContent, 300);
@@ -254,7 +274,10 @@ app.get('/api/users', async (req, res) => {
   try {
     // Récupérer les utilisateurs triés par score décroissant
     const userList = await leaderboard.content
+<<<<<<< HEAD
 >>>>>>> 933c945 (addition to the class)
+=======
+>>>>>>> 933c9454ed8713a1cff6b8f0fe3dc719d63f7572
       .find({}, { projection: { name: 1, score: 1, _id: 0 } })
       .sort({ score: -1 })
       .toArray();
@@ -266,8 +289,11 @@ app.get('/api/users', async (req, res) => {
     console.log(`Updated user cache: ${cachedUsers.length} users, total balance: $${marketData.totalUSDBalance}`);
   } catch (error) {
     console.error('Error fetching users:', error);
+<<<<<<< HEAD
   } finally {
     await db.close();
+=======
+>>>>>>> 933c9454ed8713a1cff6b8f0fe3dc719d63f7572
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 }
@@ -317,6 +343,7 @@ app.post('/api/users', async (req, res) => {
   }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   const db = new DatabaseConnection();
   try {
     await db.connect();
@@ -340,6 +367,10 @@ app.post('/api/users', async (req, res) => {
   try {
     const newScore = leaderboard.addUser(name, score);
 >>>>>>> 933c945 (addition to the class)
+=======
+  try {
+    const newScore = leaderboard.addUser(name, score);
+>>>>>>> 933c9454ed8713a1cff6b8f0fe3dc719d63f7572
     console.log(`User ${name} updated with score: ${newScore}`);
     
     // Trigger immediate user cache update

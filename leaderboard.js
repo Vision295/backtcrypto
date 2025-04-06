@@ -16,7 +16,10 @@ class LeaderBoard {
     this.collectionName = "leaderboard";
     this.content = null; // Initialize users to null
     this.connect();
+<<<<<<< HEAD
 >>>>>>> 933c945 (addition to the class)
+=======
+>>>>>>> 933c9454ed8713a1cff6b8f0fe3dc719d63f7572
   }
 
   async connect() {
