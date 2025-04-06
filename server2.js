@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors'); // Import CORS
-const LeaderBoard = require('./leaderboard'); // Correctly import the Users class
+const LeaderBoard = require('./leaderboard').default; // Correctly import the Users class
 const Currencies = require('./currencies'); // Import the Currencies class
 require('dotenv').config();
 

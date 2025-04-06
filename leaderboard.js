@@ -5,30 +5,44 @@ class Leaderboard {
     this.databaseName = "tcryptoproject";
     this.collectionName = "leaderboard";
     this.content = null;
-  }
-
-  async addUser(name, score) {
-    try {
-      const database = this.client.db(this.databaseName);
-      const usersCollection = database.collection(this.collectionName);
-      const newUser = { name, score };
-      const result = await usersCollection.insertOne(newUser);
-      console.log("User added successfully:", result.insertedId);
-    } catch (e) {
-      console.error("Error adding user:", e);
-    }
+    this.database = null;
+    this.usersCollection = null;
   }
 
   async getContent() {
     try {
-      const database = this.client.db(this.databaseName);
-      const usersCollection = database.collection(this.collectionName);
-      this.content = await usersCollection.find({}, { projection: { name: 1, score: 1, _id: 0 } }).toArray();
+      this.database = await this.client.db(this.databaseName);
+      this.usersCollection = await this.database.collection(this.collectionName);
     } catch (e) {
       console.error("Error listing users:", e);
     }
   }
 
+  async addUser(name, score) {
+    try {
+      await this.getContent()
+
+      const existingUser = await this.usersCollection.findOne({ name });
+      const newScore = existingUser ? Math.max(score, existingUser.score) : score;
+
+      await this.usersCollection.updateOne(
+            { name },
+            { $set: { score: newScore } },
+            { upsert: true }
+      );
+      console.log("User added successfully");
+    } catch (e) {
+      console.error("Error adding user:", e);
+    }
+  }
+
+  async getSortedContent() {
+      await this.getContent()
+      this.content = await this.usersCollection
+            .find({}, { projection: { name: 1, score: 1, _id: 0 } })
+            .sort({ score: -1 }) // Tri décroissant par score
+            .toArray();
+  }
 }
 
 module.exports = Leaderboard; // Export the Users class
