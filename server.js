@@ -59,20 +59,14 @@ app.get('/api/events', async (req, res) => {
 // Route to send price history
 app.get('/api/price-history', async (req, res) => {
   try {
-    const priceHistory = {};
-    await currencies.getContent(); // Ensure currencies.content is populated
-    currencies.content.forEach(item => {
-      const { name, priceHistory: history } = item;
-      if (Array.isArray(history) && history.length === 20) {
-        priceHistory[name] = history; // Use the provided history if valid
-      } else {
-        // Fallback: Generate a default array of 20 elements with the current value
-        const defaultHistory = Array(20).fill(item.value || 0);
-        priceHistory[name] = defaultHistory;
-      }
-    });
-    console.log('Price history sent to frontend:', priceHistory); // Log for debugging
-    res.json(priceHistory); // Send the price history to the frontend
+    if (!currencies) {
+      return res.status(500).json({ error: 'Currencies instance not initialized' });
+    }
+
+    // Appeler updateCryptoPrices pour générer les nouvelles données
+    const updatedPrices = await currencies.updateCryptoPrices();
+    console.log('Updated prices sent to frontend:', updatedPrices); // Log for debugging
+    res.json(updatedPrices); // Envoyer les données générées au frontend
   } catch (error) {
     console.error('Error fetching price history:', error);
     res.status(500).json({ error: 'Failed to fetch price history' });

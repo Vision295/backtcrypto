@@ -33,21 +33,22 @@ class Currencies {
   }
 
   async updateCryptoPrices() {
-    await this.getContent(); // Ensure this.content is populated as an array
+    await this.getContent(); // Assurez-vous que this.content est peuplé
 
-    // Generate a list of 20 values for each cryptocurrency in the desired format
+    // Générer une nouvelle liste de 20 valeurs pour chaque crypto
     const updatedPrices = {};
     this.content.forEach(item => {
       const { name, value } = item;
       const priceHistory = Array.from({ length: 20 }, () =>
         this.computeVariation(value)
       );
-      updatedPrices[name] = priceHistory; // Ensure it's an array of 20 values
+      updatedPrices[name] = priceHistory; // Stocker les nouvelles valeurs
     });
 
     console.log("Updated prices with history:", updatedPrices);
 
-    await this.sendContent(updatedPrices);
+    // Retourner les nouvelles valeurs pour que server.js puisse les envoyer au frontend
+    return updatedPrices;
   }
 
   async sendContent(updatedPrices) {
@@ -61,7 +62,9 @@ class Currencies {
 
   computeVariation(value) {
     const variation = (Math.random() * 0.04 - 0.02) * value; // ±2% variation
-    return parseFloat((value + variation).toFixed(6)); // Return the computed value directly
+    const newValue = parseFloat((value + variation).toFixed(6));
+    // console.log(`Computed variation: original=${value}, variation=${variation}, newValue=${newValue}`);
+    return newValue; // Return the computed value directly
   }
 
   async getRandomEvent() {
