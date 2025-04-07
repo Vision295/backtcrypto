@@ -8,6 +8,7 @@ require('dotenv').config({ path: './config.env' });
 
 const app = express(); // Create an Express app
 const port = 5000; // Define the port
+const ipAddress = '10.56.5.162'; // Change localhost to your desired IP address
 
 app.use(cors()); // Enable CORS
 app.use(express.json()); // Add this middleware to parse JSON request bodies
@@ -111,8 +112,8 @@ app.post('/api/users', async (req, res) => {
 });
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+app.listen(port, ipAddress, () => {
+  console.log(`Server is running on http://${ipAddress}:${port}`);
 });
 
 // Gracefully close the database connection on server shutdown
