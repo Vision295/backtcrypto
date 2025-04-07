@@ -35,34 +35,33 @@ class Currencies {
   async updateCryptoPrices() {
     await this.getContent(); // Ensure this.content is populated as an array
 
-    // Apply computeVariation directly to this.content
-    this.content = this.content.map(item => {
-      const { value, total, available, volatility } = item;
-      return {
-        ...item,
-        value: this.computeVariation(value, total, available, volatility) // Use the resolved value
-      };
+    // Generate a list of 20 values for each cryptocurrency in the desired format
+    const updatedPrices = {};
+    this.content.forEach(item => {
+      const { name, value } = item;
+      const priceHistory = Array.from({ length: 20 }, () =>
+        this.computeVariation(value)
+      );
+      updatedPrices[name] = priceHistory; // Ensure it's an array of 20 values
     });
 
-    console.log("prices are : ", this.content);
+    console.log("Updated prices with history:", updatedPrices);
 
-    await this.sendContent();
+    await this.sendContent(updatedPrices);
   }
 
-  async sendContent() {
-      for (const item of this.content) {
-        const { name, value, total, available, volatility } = item;
-
-        await this.currenciesCollection.updateOne(
-          { name: name },
-          { $set: { value } }
-        );
-      }
+  async sendContent(updatedPrices) {
+    for (const [name, priceHistory] of Object.entries(updatedPrices)) {
+      await this.currenciesCollection.updateOne(
+        { name: name },
+        { $set: { priceHistory } }
+      );
+    }
   }
 
-  computeVariation(value, total, available, volatility) {
+  computeVariation(value) {
     const variation = (Math.random() * 0.04 - 0.02) * value; // ±2% variation
-    return value + variation; // Return the computed value directly
+    return parseFloat((value + variation).toFixed(6)); // Return the computed value directly
   }
 
   async getRandomEvent() {

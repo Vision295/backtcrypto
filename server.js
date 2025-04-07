@@ -56,27 +56,26 @@ app.get('/api/events', async (req, res) => {
   }
 });
 
-app.get('/api/crypto-prices', async (req, res) => {
+// Route to send price history
+app.get('/api/price-history', async (req, res) => {
   try {
-    await currencies; // Ensure the currencies instance is initialized
-    await currencies.getContent(); // Fetch the latest content from the database
-    console.log("Sending cached crypto prices", currencies.content);
-    res.json(currencies.content); // Send the cached crypto prices
+    const priceHistory = {};
+    await currencies.getContent(); // Ensure currencies.content is populated
+    currencies.content.forEach(item => {
+      const { name, priceHistory: history } = item;
+      if (Array.isArray(history) && history.length === 20) {
+        priceHistory[name] = history; // Use the provided history if valid
+      } else {
+        // Fallback: Generate a default array of 20 elements with the current value
+        const defaultHistory = Array(20).fill(item.value || 0);
+        priceHistory[name] = defaultHistory;
+      }
+    });
+    console.log('Price history sent to frontend:', priceHistory); // Log for debugging
+    res.json(priceHistory); // Send the price history to the frontend
   } catch (error) {
-    console.error('Error fetching crypto prices:', error);
-    res.status(500).json({ error: 'Failed to fetch crypto prices' });
-  }
-});
-
-app.get('/api/currencies', async (req, res) => {
-  try {
-    await currencies;
-    await currencies.fetchDB(); // Fetch the latest content from the database
-    console.log("Sending cached currencies");
-    res.json(currencies.content); // Send the cached currencies
-  } catch (error) {
-    console.error('Error fetching currencies:', error);
-    res.status(500).json({ error: 'Failed to fetch currencies' });
+    console.error('Error fetching price history:', error);
+    res.status(500).json({ error: 'Failed to fetch price history' });
   }
 });
 
