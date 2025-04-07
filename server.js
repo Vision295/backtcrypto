@@ -46,9 +46,9 @@ setInterval(() => {
 app.get('/api/events', async (req, res) => {
   try {
     await currencies;
-    await currencies.getContent(); // Fetch the latest content from the database
+    await currencies.getRandomEvent(); // Fetch the latest content from the database
     console.log("Sending cached events");
-    res.json(currencies.content); // Send the cached events
+    res.json(currencies.event); // Send the cached events
   } catch (error) {
     console.error('Error fetching events:', error);
     res.status(500).json({ error: 'Failed to fetch events' });
@@ -59,8 +59,8 @@ app.get('/api/crypto-prices', async (req, res) => {
   try {
     await currencies; // Ensure the currencies instance is initialized
     await currencies.getContent(); // Fetch the latest content from the database
-    console.log("Sending cached crypto prices", currencies.cryptoPrices);
-    res.json(currencies.cryptoPrices); // Send the cached crypto prices
+    console.log("Sending cached crypto prices", currencies.content);
+    res.json(currencies.content); // Send the cached crypto prices
   } catch (error) {
     console.error('Error fetching crypto prices:', error);
     res.status(500).json({ error: 'Failed to fetch crypto prices' });
@@ -70,9 +70,9 @@ app.get('/api/crypto-prices', async (req, res) => {
 app.get('/api/currencies', async (req, res) => {
   try {
     await currencies;
-    await currencies.getContent(); // Fetch the latest content from the database
+    await currencies.fetchDB(); // Fetch the latest content from the database
     console.log("Sending cached currencies");
-    res.json(currencies.cryptoPrices); // Send the cached currencies
+    res.json(currencies.content); // Send the cached currencies
   } catch (error) {
     console.error('Error fetching currencies:', error);
     res.status(500).json({ error: 'Failed to fetch currencies' });

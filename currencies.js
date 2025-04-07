@@ -6,35 +6,7 @@ class Currencies {
     this.database = null;
     this.currenciesCollection = null;
     this.eventsCollection = null;
-    this.cryptoPrices = {
-      SHIB: 0.00001,
-      DOGE: 0.06,
-      LTC: 70,
-      ADA: 0.4,
-      DOT: 5,
-      SOL: 20,
-      AVAX: 15,
-      BNB: 300,
-      XRP: 0.5,
-      ETH: 2000,
-      BTC: 30000,
-      };
-    // Ajout des balances initiales des cryptos
-    this.cryptoBalances = {
-      SHIB: 0,
-      DOGE: 0,
-      LTC: 0,
-      ADA: 0,
-      DOT: 0,
-      SOL: 0,
-      AVAX: 0,
-      BNB: 0,
-      XRP: 0,
-      ETH: 0,
-      BTC: 0,
-      };
-
-      this.event = null;
+    this.event = null;
   }
 
   async fetchDB() {
@@ -52,7 +24,7 @@ class Currencies {
       await this.fetchDB()
 
       this.content = await this.currenciesCollection
-        .find({}, { projection: { name: 1, price: 1, _id: 0 } })
+        .find({}, { projection: { name: 1, value: 1, available: 1, total: 1, volatility: 1, _id: 0 } })
         .sort({ price: 1 }) // Sort by price in descending order
         .toArray();
     } catch (e) {
@@ -61,16 +33,36 @@ class Currencies {
   }
 
   async updateCryptoPrices() {
-    await this.getContent()
-    Object.keys(this.cryptoPrices).forEach((crypto) => {
-      const currentPrice = this.cryptoPrices[crypto];
-      const volatilityFactor = crypto === 'BTC' ? 0.02 : 
-                             crypto === 'ETH' ? 0.025 : 
-                             crypto === 'SHIB' ? 0.04 : 0.03;
-      const variation = (Math.random() * volatilityFactor * 2 - volatilityFactor) * currentPrice;
-      const newPrice = Math.max(0.00001, currentPrice + variation); // Empêcher les prix négatifs
-      this.cryptoPrices[crypto] = parseFloat(newPrice);
+    await this.getContent(); // Ensure this.content is populated as an array
+
+    // Apply computeVariation directly to this.content
+    this.content = this.content.map(item => {
+      const { value, total, available, volatility } = item;
+      return {
+        ...item,
+        value: this.computeVariation(value, total, available, volatility) // Use the resolved value
+      };
     });
+
+    console.log("prices are : ", this.content);
+
+    await this.sendContent();
+  }
+
+  async sendContent() {
+      for (const item of this.content) {
+        const { name, value, total, available, volatility } = item;
+
+        await this.currenciesCollection.updateOne(
+          { name: name },
+          { $set: { value } }
+        );
+      }
+  }
+
+  computeVariation(value, total, available, volatility) {
+    const variation = (Math.random() * 0.04 - 0.02) * value; // ±2% variation
+    return value + variation; // Return the computed value directly
   }
 
   async getRandomEvent() {
@@ -85,6 +77,9 @@ class Currencies {
       }
   }
 
+  async applyEvent() {
+
+  }
 }
 
 module.exports = Currencies;
