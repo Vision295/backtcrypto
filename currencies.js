@@ -37,10 +37,10 @@ class Currencies {
 
     // Apply computeVariation directly to this.content
     this.content = this.content.map(item => {
-      const { value, total, available, volatility } = item;
+      const { name, value, total, available, volatility } = item;
       return {
         ...item,
-        value: this.computeVariation(value, total, available, volatility) // Use the resolved value
+        value: this.computeVariation(name, value, total, available, volatility) // Use the resolved value
       };
     });
 
@@ -60,7 +60,12 @@ class Currencies {
       }
   }
 
-  computeVariation(value, total, available, volatility) {
+  computeVariation(name, value, total, available, volatility) {
+    if (this.event) {
+      if (this.event.name === name) {
+        volatility = this.event.volatility;
+      }
+    }
     const variation = (Math.random() * 0.04 - 0.02) * value; // ±2% variation
     return value + variation; // Return the computed value directly
   }
@@ -70,15 +75,10 @@ class Currencies {
         await this.fetchDB()
         const randomEvent = await this.eventsCollection.aggregate([{ $sample: { size: 1 } }]).toArray();
         this.event = randomEvent[0];
-        this.applyEvent();
       } catch (e) {
         console.error("Error fetching random event:", e);
         return null;
       }
-  }
-
-  async applyEvent() {
-
   }
 }
 
