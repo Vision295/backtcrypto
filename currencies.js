@@ -58,9 +58,7 @@ class Currencies {
 
       updatedPrices[symbol] = priceHistory; // Store the updated priceHistory
     }
-
-    // console.log("Updated prices with history:", updatedPrices);
-    return updatedPrices; // Return the updated prices for the frontend
+    return updatedPrices;
   }
 
   computeVariation(value, volatility) {
@@ -73,6 +71,8 @@ class Currencies {
       await this.fetchDB();
       const randomEvent = await this.eventsCollection.aggregate([{ $sample: { size: 1 } }]).toArray();
       this.event = randomEvent[0];
+      console.log(this.event);
+      return this.event;
     } catch (e) {
       console.error("Error fetching random event:", e);
       return null;

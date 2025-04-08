@@ -79,6 +79,13 @@ const apiEndpoints = [
       const updatedPrices = await currencies.updateCryptoPrices();
       return updatedPrices;
     },
+  }, 
+  {
+    path: '/api/current-event',
+    handler: async () => {
+      const currentEvent = await currencies.getRandomEvent();
+      return currentEvent;
+    }
   }
 ];
 
