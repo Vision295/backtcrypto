@@ -1,7 +1,8 @@
-class Currencies {
+const { log } = require("console");
 
+class Currencies {
   constructor(client) {
-    this.client = client  // Removed deprecated options
+    this.client = client;
     this.content = null;
     this.database = null;
     this.currenciesCollection = null;
@@ -21,11 +22,11 @@ class Currencies {
 
   async getContent() {
     try {
-      await this.fetchDB()
+      await this.fetchDB();
 
       this.content = await this.currenciesCollection
-        .find({}, { projection: { name: 1, value: 1, available: 1, total: 1, volatility: 1, _id: 0 } })
-        .sort({ price: 1 }) // Sort by price in descending order
+        .find({}, { projection: { name: 1, symbol: 1, value: 1, available: 1, total: 1, volatility: 1, priceHistory: 1, _id: 0 } })
+        .sort({ price: 1 })
         .toArray();
     } catch (e) {
       console.error("Error fetching sorted currencies:", e);
@@ -33,41 +34,49 @@ class Currencies {
   }
 
   async updateCryptoPrices() {
-    await this.getContent(); // Assurez-vous que this.content est peuplé
+    await this.getContent();
 
-    // Générer une nouvelle liste de 20 valeurs pour chaque crypto
     const updatedPrices = {};
-    this.content.forEach(item => {
-      const { name, value } = item;
-      const priceHistory = Array.from({ length: 20 }, () =>
-        this.computeVariation(value)
+    for (const item of this.content) {
+      const { symbol, value, priceHistory, volatility } = item;
+      
+      console.log("Current item:", item); 
+
+      // Compute the next price based on the last value in priceHistory
+      const lastPrice = priceHistory[priceHistory.length - 1];
+      const newPrice = this.computeVariation(lastPrice, volatility);
+
+      // Update the priceHistory array
+      priceHistory.push(newPrice);
+      if (priceHistory.length > 20) priceHistory.shift(); // Delete the first value
+
+      // Update the database with the new priceHistory
+      await this.currenciesCollection.updateOne(
+        { symbol },
+        { $set: { priceHistory } }
       );
-      updatedPrices[name] = priceHistory; // Stocker les nouvelles valeurs
-    });
 
-    console.log("Updated prices with history:", updatedPrices);
+      updatedPrices[symbol] = priceHistory; // Store the updated priceHistory
+    }
 
-    // Retourner les nouvelles valeurs pour que server.js puisse les envoyer au frontend
-    return updatedPrices;
+    // console.log("Updated prices with history:", updatedPrices);
+    return updatedPrices; // Return the updated prices for the frontend
   }
-  
 
-  computeVariation(value) {
-    const variation = (Math.random() * 0.04 - 0.02) * value; // ±2% variation
-    const newValue = parseFloat((value + variation).toFixed(6));
-    // console.log(`Computed variation: original=${value}, variation=${variation}, newValue=${newValue}`);
-    return newValue; // Return the computed value directly
+  computeVariation(value, volatility) {
+    const variation = (Math.random() * 2 * volatility - volatility) * value; // ±volatility% variation
+    return parseFloat((value + variation).toFixed(6));
   }
 
   async getRandomEvent() {
-      try {
-        await this.fetchDB()
-        const randomEvent = await this.eventsCollection.aggregate([{ $sample: { size: 1 } }]).toArray();
-        this.event = randomEvent[0];
-      } catch (e) {
-        console.error("Error fetching random event:", e);
-        return null;
-      }
+    try {
+      await this.fetchDB();
+      const randomEvent = await this.eventsCollection.aggregate([{ $sample: { size: 1 } }]).toArray();
+      this.event = randomEvent[0];
+    } catch (e) {
+      console.error("Error fetching random event:", e);
+      return null;
+    }
   }
 }
 

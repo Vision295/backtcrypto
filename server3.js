@@ -32,7 +32,7 @@ setInterval(() => {
   if (currencies) {
     currencies.updateCryptoPrices(); // Call the update method
   }
-}, 100); // 10,000 ms = 10 seconds
+}, 5100); // 5000 ms = 5 seconds
 
 setInterval(() => {
   if (currencies) {
