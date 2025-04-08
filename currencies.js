@@ -50,15 +50,7 @@ class Currencies {
     // Retourner les nouvelles valeurs pour que server.js puisse les envoyer au frontend
     return updatedPrices;
   }
-
-  async sendContent(updatedPrices) {
-    for (const [name, priceHistory] of Object.entries(updatedPrices)) {
-      await this.currenciesCollection.updateOne(
-        { name: name },
-        { $set: { priceHistory } }
-      );
-    }
-  }
+  
 
   computeVariation(value) {
     const variation = (Math.random() * 0.04 - 0.02) * value; // ±2% variation
