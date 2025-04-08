@@ -33,41 +33,38 @@ class Currencies {
   }
 
   async updateCryptoPrices() {
-    await this.getContent(); // Ensure this.content is populated as an array
+    await this.getContent(); // Assurez-vous que this.content est peuplé
 
-    // Apply computeVariation directly to this.content
-    this.content = this.content.map(item => {
-      const { name, value, total, available, volatility } = item;
-      return {
-        ...item,
-        value: this.computeVariation(name, value, total, available, volatility) // Use the resolved value
-      };
+    // Générer une nouvelle liste de 20 valeurs pour chaque crypto
+    const updatedPrices = {};
+    this.content.forEach(item => {
+      const { name, value } = item;
+      const priceHistory = Array.from({ length: 20 }, () =>
+        this.computeVariation(value)
+      );
+      updatedPrices[name] = priceHistory; // Stocker les nouvelles valeurs
     });
 
-    console.log("prices are : ", this.content);
+    console.log("Updated prices with history:", updatedPrices);
 
-    await this.sendContent();
+    // Retourner les nouvelles valeurs pour que server.js puisse les envoyer au frontend
+    return updatedPrices;
   }
 
-  async sendContent() {
-      for (const item of this.content) {
-        const { name, value, total, available, volatility } = item;
-
-        await this.currenciesCollection.updateOne(
-          { name: name },
-          { $set: { value } }
-        );
-      }
-  }
-
-  computeVariation(name, value, total, available, volatility) {
-    if (this.event) {
-      if (this.event.name === name) {
-        volatility = this.event.volatility;
-      }
+  async sendContent(updatedPrices) {
+    for (const [name, priceHistory] of Object.entries(updatedPrices)) {
+      await this.currenciesCollection.updateOne(
+        { name: name },
+        { $set: { priceHistory } }
+      );
     }
+  }
+
+  computeVariation(value) {
     const variation = (Math.random() * 0.04 - 0.02) * value; // ±2% variation
-    return value + variation; // Return the computed value directly
+    const newValue = parseFloat((value + variation).toFixed(6));
+    // console.log(`Computed variation: original=${value}, variation=${variation}, newValue=${newValue}`);
+    return newValue; // Return the computed value directly
   }
 
   async getRandomEvent() {

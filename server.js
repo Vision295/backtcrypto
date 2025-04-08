@@ -56,27 +56,20 @@ app.get('/api/events', async (req, res) => {
   }
 });
 
-app.get('/api/crypto-prices', async (req, res) => {
+// Route to send price history
+app.get('/api/price-history', async (req, res) => {
   try {
-    await currencies; // Ensure the currencies instance is initialized
-    await currencies.getContent(); // Fetch the latest content from the database
-    console.log("Sending cached crypto prices", currencies.content);
-    res.json(currencies.content); // Send the cached crypto prices
-  } catch (error) {
-    console.error('Error fetching crypto prices:', error);
-    res.status(500).json({ error: 'Failed to fetch crypto prices' });
-  }
-});
+    if (!currencies) {
+      return res.status(500).json({ error: 'Currencies instance not initialized' });
+    }
 
-app.get('/api/currencies', async (req, res) => {
-  try {
-    await currencies;
-    await currencies.fetchDB(); // Fetch the latest content from the database
-    console.log("Sending cached currencies");
-    res.json(currencies.content); // Send the cached currencies
+    // Appeler updateCryptoPrices pour générer les nouvelles données
+    const updatedPrices = await currencies.updateCryptoPrices();
+    console.log('Updated prices sent to frontend:', updatedPrices); // Log for debugging
+    res.json(updatedPrices); // Envoyer les données générées au frontend
   } catch (error) {
-    console.error('Error fetching currencies:', error);
-    res.status(500).json({ error: 'Failed to fetch currencies' });
+    console.error('Error fetching price history:', error);
+    res.status(500).json({ error: 'Failed to fetch price history' });
   }
 });
 
