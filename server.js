@@ -44,6 +44,9 @@ setInterval(() => {
 
 
 
+
+
+
 app.get('/api/events', async (req, res) => {
   try {
     await currencies;

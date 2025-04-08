@@ -41,6 +41,9 @@ setInterval(() => {
 }, 10000); // 10,000 ms = 10 seconds
 
 
+
+
+
 const apiEndpoints = [
   {
     path: '/api/events',
@@ -70,6 +73,13 @@ const apiEndpoints = [
       return leaderboard.content;
     },
   },
+  {
+    path: '/api/price-history',
+    handler: async () => {
+      const updatedPrices = await currencies.updateCryptoPrices();
+      return updatedPrices;
+    },
+  }
 ];
 
 apiEndpoints.forEach(({ path, handler }) => {
