@@ -1,55 +1,45 @@
-const { MongoClient } = require('mongodb');
-require('dotenv').config({ path: './config.env' });
-
 class Leaderboard {
 
-  constructor() {
-    this.Db = process.env.ATLAS_URI;
-    if (!this.Db) { throw new Error("ATLAS_URI is not defined in the environment variables."); }
-    this.client = new MongoClient(this.Db); // Removed deprecated options
-    this.databaseName = "tcryptoproject";
-    this.collectionName = "leaderboard";
+  constructor(client) {
+    this.client = client  // Removed deprecated options
     this.content = null;
+    this.database = null;
+    this.usersCollection = null;
   }
 
-  async connect() {
+  async fetchDB() {
     try {
-      await this.client.connect();
-      console.log("Connected to MongoDB");
-    } catch (e) {
-      console.error("Error connecting to MongoDB:", e);
-    }
-  }
-
-  async addUser(name, score) {
-    try {
-      const database = this.client.db(this.databaseName);
-      const usersCollection = database.collection(this.collectionName);
-      const newUser = { name, score };
-      const result = await usersCollection.insertOne(newUser);
-      console.log("User added successfully:", result.insertedId);
-    } catch (e) {
-      console.error("Error adding user:", e);
-    }
-  }
-
-  async getContent() {
-    try {
-      const database = this.client.db(this.databaseName);
-      const usersCollection = database.collection(this.collectionName);
-      this.content = await usersCollection.find({}, { projection: { name: 1, score: 1, _id: 0 } }).toArray();
+      this.database = await this.client.db("tcryptoproject");
+      this.usersCollection = await this.database.collection("leaderboard");
     } catch (e) {
       console.error("Error listing users:", e);
     }
   }
 
-  async close() {
+  async addUser(name, score) {
     try {
-      await this.client.close();
-      console.log("Connection to MongoDB closed");
+      await this.fetchDB()
+
+      const existingUser = await this.usersCollection.findOne({ name });
+      const newScore = existingUser ? Math.max(score, existingUser.score) : score;
+
+      await this.usersCollection.updateOne(
+            { name },
+            { $set: { score: newScore } },
+            { upsert: true }
+      );
+      console.log("User added successfully");
     } catch (e) {
-      console.error("Error closing connection:", e);
+      console.error("Error adding user:", e);
     }
+  }
+
+  async getSortedContent() {
+      await this.fetchDB()
+      this.content = await this.usersCollection
+            .find({}, { projection: { name: 1, score: 1, _id: 0 } })
+            .sort({ score: -1 }) // Tri décroissant par score
+            .toArray();
   }
 }
 

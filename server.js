@@ -1,172 +1,120 @@
-const express = require('express');
+const express = require('express'); // Import Express
 const cors = require('cors'); // Import CORS
-const LeaderBoard = require('./leaderboard'); // Correctly import the Users class
+const { connectToDatabase, closeDatabaseConnection } = require('./connection'); // Import connection functions
+const Leaderboard = require('./leaderboard'); // Import the LeaderBoard class
 const Currencies = require('./currencies'); // Import the Currencies class
-require('dotenv').config();
 
-const app = express();
-const port = 5000;
-const ipAddress = 'localhost'; // Listen on all network interfaces
+require('dotenv').config({ path: './config.env' });
+
+const app = express(); // Create an Express app
+const port = 5000; // Define the port
+const ipAddress = 'localhost'; // Change localhost to your desired IP address
 
 app.use(cors()); // Enable CORS
 app.use(express.json()); // Add this middleware to parse JSON request bodies
 
-let cachedUsers = [];
-let cachedCurrencies = [];
-// Mise à jour des prix des cryptos pour correspondre au frontend
-let cryptoPrices = {
-  SHIB: 0.00001,
-  DOGE: 0.06,
-  LTC: 70,
-  ADA: 0.4,
-  DOT: 5,
-  SOL: 20,
-  AVAX: 15,
-  BNB: 300,
-  XRP: 0.5,
-  ETH: 2000,
-  BTC: 30000,
-};
+let client; // Declare the client variable
+let leaderboard; // Declare the leaderboard variable
+let currencies;
 
-// Ajout des balances initiales des cryptos
-let cryptoBalances = {
-  SHIB: 0,
-  DOGE: 0,
-  LTC: 0,
-  ADA: 0,
-  DOT: 0,
-  SOL: 0,
-  AVAX: 0,
-  BNB: 0,
-  XRP: 0,
-  ETH: 0,
-  BTC: 0,
-};
-
-let leaderboard = new LeaderBoard();
-let currencies = new Currencies();
-
-leaderboard.connect()
-currencies.connect()
-
-
-function updateCryptoPrices() {
-  Object.keys(cryptoPrices).forEach((crypto) => {
-    const currentPrice = cryptoPrices[crypto];
-    const variation = (Math.random() * 0.04 - 0.02) * currentPrice; // ±2% variation
-    const newPrice = Math.max(0.5, Math.min(currentPrice + variation, currentPrice * 1.1)); // Limit growth/decay
-    cryptoPrices[crypto] = parseFloat(newPrice.toFixed(2));
-  });
-}
-
-// Route pour récupérer les balances des cryptos
-app.get('/api/crypto-balances', (req, res) => {
-  res.json(cryptoBalances);
-});
-
-// Function to periodically fetch users
-async function fetchUsersPeriodically() {
+// Establish the database connection once when the server starts
+(async () => {
   try {
-    await leaderboard.getContent();
-    console.log("Periodically fetched users"); 
+    client = await connectToDatabase(); // Get the client object
+    leaderboard = new Leaderboard(client); // Create an instance of the LeaderBoard class with the client
+    currencies = new Currencies(client); // Create an instance of the Currencies class with the client
   } catch (error) {
-    console.error('Error fetching users periodically:', error);
-  } 
-}
+    console.error('Failed to initialize the application:', error);
+    process.exit(1); // Exit the application if initialization fails
+  }
+})();
 
-// Function to periodically fetch currencies
-async function fetchCurrenciesPeriodically() {
+// Periodically update crypto prices every 10 seconds
+setInterval(() => {
+  if (currencies) {
+    currencies.updateCryptoPrices(); // Call the update method
+  }
+}, 100); // 10,000 ms = 10 seconds
+
+setInterval(() => {
+  if (currencies) {
+    currencies.getRandomEvent(); // Call the update method
+  }
+}, 10000); // 10,000 ms = 10 seconds
+
+
+
+
+
+
+app.get('/api/events', async (req, res) => {
   try {
-    await currencies.getContent();
-    console.log("Periodically fetched currencies");  // Debugging log
+    await currencies;
+    await currencies.getRandomEvent(); // Fetch the latest content from the database
+    console.log("Sending cached events");
+    res.json(currencies.event); // Send the cached events
   } catch (error) {
-    console.error('Error fetching currencies periodically:', error);
-  } 
-}
-
-// Mise à jour des prix des cryptos avec des variations réalistes
-function updateCryptoPrices() {
-  Object.keys(cryptoPrices).forEach((crypto) => {
-    const currentPrice = cryptoPrices[crypto];
-    const volatilityFactor = crypto === 'BTC' ? 0.02 : 
-                             crypto === 'ETH' ? 0.025 : 
-                             crypto === 'SHIB' ? 0.04 : 0.03;
-    const variation = (Math.random() * volatilityFactor * 2 - volatilityFactor) * currentPrice;
-    const newPrice = Math.max(0.00001, currentPrice + variation); // Empêcher les prix négatifs
-    cryptoPrices[crypto] = parseFloat(newPrice.toFixed(6));
-  });
-}
-
-// Schedule periodic fetching every 5 minutes (300,000 ms)
-setInterval(fetchUsersPeriodically, 500);
-setInterval(fetchCurrenciesPeriodically, 300);
-setInterval(updateCryptoPrices, 5000); // Update prices every 5 seconds
-
-// Initial fetch to populate caches
-fetchUsersPeriodically();
-fetchCurrenciesPeriodically();
-
-app.get('/api/users', async (req, res) => {
-  const leaderboard = new LeaderBoard();
-  try {
-    await leaderboard.connect();
-    const database = leaderboard.client.db(leaderboard.databaseName);
-    const usersCollection = database.collection(leaderboard.collectionName);
-
-    // Récupérer les utilisateurs triés par score décroissant
-    const userList = await usersCollection
-      .find({}, { projection: { name: 1, score: 1, _id: 0 } })
-      .sort({ score: -1 }) // Tri décroissant par score
-      .toArray();
-
-    res.json(userList); // Envoyer les données triées
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ error: 'Failed to fetch users' });
-  } finally {
-    await leaderboard.close();
+    console.error('Error fetching events:', error);
+    res.status(500).json({ error: 'Failed to fetch events' });
   }
 });
 
-app.get('/api/currencies', (req, res) => {
-  console.log("Sending cached currencies:", cachedCurrencies); // Debugging log
-  res.json(cachedCurrencies);
+// Route to send price history
+app.get('/api/price-history', async (req, res) => {
+  try {
+    if (!currencies) {
+      return res.status(500).json({ error: 'Currencies instance not initialized' });
+    }
+
+    // Appeler updateCryptoPrices pour générer les nouvelles données
+    const updatedPrices = await currencies.updateCryptoPrices();
+    console.log('Updated prices sent to frontend:', updatedPrices); // Log for debugging
+    res.json(updatedPrices); // Envoyer les données générées au frontend
+  } catch (error) {
+    console.error('Error fetching price history:', error);
+    res.status(500).json({ error: 'Failed to fetch price history' });
+  }
 });
 
-app.get('/api/crypto-prices', (req, res) => {
-  res.json(cryptoPrices);
+// fetch a new user
+app.get('/api/users', async (req, res) => {
+  try {
+    await leaderboard;
+    await leaderboard.getSortedContent(); // Sort the data by score
+    console.log('Fetched users');  // Log the fetched data for debugging
+    res.json(leaderboard.content); // Send the fetched data as a JSON response
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
 });
 
+// enter a new user !
 app.post('/api/users', async (req, res) => {
   const { name, score } = req.body;
   if (!name || typeof score !== "number") {
     return res.status(400).json({ error: "Invalid data" });
   }
 
-  const leaderboard = new LeaderBoard();
   try {
-    await leaderboard.connect();
-    const database = leaderboard.client.db(leaderboard.databaseName);
-    const usersCollection = database.collection(leaderboard.collectionName);
-
-    const existingUser = await usersCollection.findOne({ name });
-    const newScore = existingUser ? Math.max(score, existingUser.score) : score;
-
-    const result = await usersCollection.updateOne(
-      { name },
-      { $set: { score: newScore } },
-      { upsert: true }
-    );
-    console.log(`User ${name} updated with score: ${newScore}`);
-    res.json({ success: true, result });
+    await leaderboard;
+    await leaderboard.addUser(name, score); // Add the user to the leaderboard
+    console.log(`User ${name} updated with score: ${score}`); // Log the added user for debugging
+    res.json({ success: true }); // Send a success response
   } catch (error) {
-    console.error("Error updating user score:", error);
-    res.status(500).json({ error: "Failed to update user score" });
-  } finally {
-    await leaderboard.close();
+    console.error("Error adding user:", error);
+    res.status(500).json({ error: "Failed to add user" }); // Send an error response
   }
 });
 
+// Start the server
 app.listen(port, ipAddress, () => {
-  console.log(`Server running at http://${ipAddress}:${port}`);
+  console.log(`Server is running on http://${ipAddress}:${port}`);
+});
+
+// Gracefully close the database connection on server shutdown
+process.on('SIGINT', async () => {
+  console.log('Shutting down server...');
+  await closeDatabaseConnection(client); // Close the MongoDB connection
+  process.exit(0); // Exit the process
 });
