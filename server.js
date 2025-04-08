@@ -34,15 +34,14 @@ setInterval(() => {
   }
 }, 5100); // 5000 ms = 5 seconds
 
-setInterval(() => {
+setInterval(async () => {
   if (currencies) {
-    currencies.getRandomEvent(); // Call the update method
+    const event = await currencies.getRandomEvent();
+    if (event) {
+      await currencies.applyEventVolatility(event);
+    }
   }
-}, 10000); // 10,000 ms = 10 seconds
-
-
-
-
+}, 30000); // 30 s
 
 const apiEndpoints = [
   {

@@ -40,7 +40,7 @@ class Currencies {
     for (const item of this.content) {
       const { symbol, value, priceHistory, volatility } = item;
       
-      console.log("Current item:", item); 
+      //console.log("Current item:", item); 
 
       // Compute the next price based on the last value in priceHistory
       const lastPrice = priceHistory[priceHistory.length - 1];
@@ -76,6 +76,40 @@ class Currencies {
     } catch (e) {
       console.error("Error fetching random event:", e);
       return null;
+    }
+  }
+
+  async applyEventVolatility(event) {
+    try {
+      const { acronym, new_volatility, duration } = event;
+
+      // Fetch the current currency data
+      const currency = await this.currenciesCollection.findOne({ symbol: acronym });
+      if (!currency) {
+        console.error(`Currency with symbol ${acronym} not found.`);
+        return;
+      }
+
+      // Store the original volatility
+      const originalVolatility = currency.volatility;
+
+      // Update the volatility to the new value
+      await this.currenciesCollection.updateOne(
+        { symbol: acronym },
+        { $set: { volatility: new_volatility } }
+      );
+      console.log(`Volatility for ${acronym} updated to ${new_volatility} for ${duration}ms.`);
+
+      // Revert the volatility back to the original value after the duration
+      setTimeout(async () => {
+        await this.currenciesCollection.updateOne(
+          { symbol: acronym },
+          { $set: { volatility: originalVolatility } }
+        );
+        console.log(`Volatility for ${acronym} reverted to ${originalVolatility}.`);
+      }, duration);
+    } catch (e) {
+      console.error("Error applying event volatility:", e);
     }
   }
 }
