@@ -1,69 +1,46 @@
-const { MongoClient } = require('mongodb');
-require('dotenv').config({ path: './config.env' });
+class Leaderboard {
 
-class Users {
-  constructor() {
-    this.Db = process.env.ATLAS_URI;
-    if (!this.Db) {
-      throw new Error("ATLAS_URI is not defined in the environment variables.");
-    }
-    this.client = new MongoClient(this.Db, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    this.databaseName = "tcrypto";
-    this.collectionName = "users";
+  constructor(client) {
+    this.client = client  // Removed deprecated options
+    this.content = null;
+    this.database = null;
+    this.usersCollection = null;
   }
 
-  async connect() {
+  async fetchDB() {
     try {
-      await this.client.connect();
-      console.log("Connected to MongoDB");
-    } catch (e) {
-      console.error("Error connecting to MongoDB:", e);
-    }
-  }
-
-  async addUser(name, score) {
-    try {
-      const database = this.client.db(this.databaseName);
-      const usersCollection = database.collection(this.collectionName);
-      const newUser = { name, score };
-      const result = await usersCollection.insertOne(newUser);
-      console.log("User added successfully:", result.insertedId);
-    } catch (e) {
-      console.error("Error adding user:", e);
-    }
-  }
-
-  async listUsers() {
-    try {
-      const database = this.client.db(this.databaseName);
-      const usersCollection = database.collection(this.collectionName);
-      const users = await usersCollection.find({}, { projection: { name: 1, score: 1, _id: 0 } }).toArray(); // Project only name and score
-      console.log("Users in the database:", users);
+      this.database = await this.client.db("tcryptoproject");
+      this.usersCollection = await this.database.collection("leaderboard");
     } catch (e) {
       console.error("Error listing users:", e);
     }
   }
 
-  async close() {
+  async addUser(name, score) {
     try {
-      await this.client.close();
-      console.log("Connection to MongoDB closed");
+      await this.fetchDB()
+
+      const existingUser = await this.usersCollection.findOne({ name });
+      const newScore = existingUser ? Math.max(score, existingUser.score) : score;
+
+      await this.usersCollection.updateOne(
+            { name },
+            { $set: { score: newScore } },
+            { upsert: true }
+      );
+      console.log("User added successfully");
     } catch (e) {
-      console.error("Error closing connection:", e);
+      console.error("Error adding user:", e);
     }
+  }
+
+  async getSortedContent() {
+      await this.fetchDB()
+      this.content = await this.usersCollection
+            .find({}, { projection: { name: 1, score: 1, _id: 0 } })
+            .sort({ score: -1 }) // Tri décroissant par score
+            .toArray();
   }
 }
 
-module.exports = Users; // Export the Users class
-
-// Example usage
-(async () => {
-  const users = new Users();
-  await users.connect();
-  await users.addUser("Alice", 100); // Add a user
-  await users.listUsers(); // List all users
-  await users.close();
-})();
+module.exports = Leaderboard; // Export the Users class
