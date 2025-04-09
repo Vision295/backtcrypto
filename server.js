@@ -8,7 +8,7 @@ require('dotenv').config({ path: './config.env' });
 
 const app = express();
 const port = 5000;
-const ipAddress = 'localhost';
+const ipAddress = '10.56.5.162';
 
 app.use(cors());
 app.use(express.json());
